@@ -1,0 +1,6 @@
+cache.log
+*.so
+*.bmp
+__pycache__
+venv
+*.json

@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Data Display</title>
+    <!-- Подключение Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Подключение собственных стилей -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+
+    <!-- Подключение jQuery и Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function startVideo() {
+            const video = document.getElementById('video-stream');
+            video.src = '/video_feed'; // Ссылка на маршрут Flask для получения видеопотока
+        }
+
+        function stopVideo() {
+             const video = document.getElementById('video-stream');
+              video.src = ''; // Очищаем источник видео video.pause(); // Останавливаем воспроизведение, если оно активно 
+        }
+
+
+        
+        async function fetchQRData() {
+            try {
+                let response = await fetch('/qr_data', {
+                    method: 'GET'
+                });
+                let data = await response.json();
+                if (response.ok && data["QR Code"]) {
+                    showQRCode(data["QR Code"]);
+                }
+            } catch (error) {
+                console.error('Ошибка при получении QR данных:', error);
+            }
+        }
+
+
+        async function activatePort() {
+            try {
+                let response = await fetch('/activate_port', {
+                    method: 'POST',
+                });
+                let data = await response.json(); 
+                if (response.ok) {
+                    showQRCode(data["QR Code"]);
+                    $('#successModal').modal('show');
+                } else {
+                    document.getElementById('error-message').innerText = data.error;
+                }
+            } catch (error) {
+                document.getElementById('error-message').innerText = 'Ошибка при получении данных';
+            }
+        }
+
+        async function captureImage() {
+            try {
+                let response = await fetch('/capture_image', {
+                    method: 'POST'
+                });
+                let data = await response.json();
+                if (response.ok) {
+                    updateQRImage(data['file_path']);
+                    alert('Image captured successfully!');
+                } else {
+                    document.getElementById('error-message').innerText = data.error;
+                }
+            } catch (error) {
+                document.getElementById('error-message').innerText = 'Ошибка при захвате изображения';
+            }
+        }
+
+        async function calculateSharpness() {
+            try {
+                let response = await fetch('/calculate_sharpness', {
+                    method: 'POST'
+                });
+                let data = await response.json();
+                if (response.ok) {
+                    displaySharpness(data.sharpness); 
+                    $('#successModal').modal('show');
+                } else {
+                    document.getElementById('error-message').innerText = data.error;
+                }
+            } catch (error) {
+                document.getElementById('error-message').innerText = 'Ошибка при вычислении резкости';
+            }
+        }
+
+        async function runDetection() {
+            try {
+                let response = await fetch('/rundetection', {
+                    method: 'POST'
+                });
+                let data = await response.json();
+                if (response.ok) {
+                    showScore(data.score);
+                    if (data.score > 0.0) {
+                        updatePredImage(data['file_path']);
+                    }
+                    $('#successModal').modal('show');
+                } else {
+                    document.getElementById('error-message').innerText = data.error;
+                }
+            } catch (error) {
+                document.getElementById('error-message').innerText = 'Ошибка при вычислении резкости';
+            }
+        }
+
+
+        function updateQRImage(filePath) {
+            let imageElement = document.getElementById('qr-image');
+            imageElement.src = filePath + '?' + new Date().getTime();
+        }
+        
+        function updatePredImage(filePath) {
+            let imageElement = document.getElementById('predict-image');
+            imageElement.src = filePath + '?' + new Date().getTime();
+        }
+
+
+        async function getAllParameters() {
+            try {
+                let response = await fetch('/parameters', {
+                    method: 'GET'
+                });
+                let data = await response.json();
+                if (response.ok) {
+                    populateForm(data);
+                } else {
+                    document.getElementById('error-message').innerText = data.error;
+                }
+            } catch (error) {
+                document.getElementById('error-message').innerText = 'Ошибка при получении параметров';
+            }
+        }
+
+        async function setParameter(param) {
+            try {
+                let newValue = document.getElementById(param.toLowerCase()).value;
+                let response = await fetch(`/parameter/${param}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(newValue) // Отправляем только новое значение
+                });
+                let data = await response.json();
+                if (response.ok) {
+                    alert(`${param} updated successfully!`);
+                    // После успешного обновления значения, обновляем форму
+                    getAllParameters();
+                } else {
+                    document.getElementById('error-message').innerText = data.error;
+                }
+            } catch (error) {
+                document.getElementById('error-message').innerText = `Ошибка при установке параметра ${param}`;
+            }
+        }
+
+        function populateForm(data) {
+            let formContainer = document.getElementById('form-container');
+            formContainer.innerHTML = '';
+
+            for (let key in data) {
+                let divFormGroup = document.createElement('div');
+                divFormGroup.classList.add('form-group');
+
+                let label = document.createElement('label');
+                label.textContent = key;
+                label.classList.add('col-form-label', 'font-weight-bold');
+
+                let input = document.createElement('input');
+                input.type = 'text';
+                input.id = key.toLowerCase(); // Используем название параметра в нижнем регистре как id
+                input.value = data[key];
+                input.classList.add('form-control'); // Убираем класс input-group
+
+                let button = document.createElement('button');
+                button.textContent = `Set ${key}`;
+                button.classList.add('btn', 'btn-primary', 'btn-block', 'mt-3', 'set-button'); // Добавляем класс set-button
+                button.addEventListener('click', function() {
+                    setParameter(key);
+                });
+
+                divFormGroup.appendChild(label);
+                divFormGroup.appendChild(input);
+                divFormGroup.appendChild(button);
+                formContainer.appendChild(divFormGroup);
+            }
+        }
+
+        function showQRCode(qrCode) {
+            let formContainer = document.getElementById('port-data-container');
+            formContainer.innerHTML = ''; // Очищаем контейнер
+
+            let divFormGroup = document.createElement('div');
+            divFormGroup.classList.add('form-group');
+
+            let label = document.createElement('label');
+            label.textContent = 'QR Code';
+            label.classList.add('col-form-label', 'font-weight-bold');
+
+            let input = document.createElement('input');
+            input.type = 'text';
+            input.id = 'qr-data-input';
+            input.value = qrCode.trim(); // Отображаем значение QR Code без лишних пробелов
+            input.classList.add('form-control');
+            input.setAttribute('readonly', true); // Делаем поле только для чтения
+
+            divFormGroup.appendChild(label);
+            divFormGroup.appendChild(input);
+            formContainer.appendChild(divFormGroup);
+        }
+
+        function showScore(qrCode) {
+            let formContainer = document.getElementById('score-container');
+            formContainer.innerHTML = ''; // Очищаем контейнер
+
+            let divFormGroup = document.createElement('div');
+            divFormGroup.classList.add('form-group');
+
+            let label = document.createElement('label');
+            label.textContent = 'Score';
+            label.classList.add('col-form-label', 'font-weight-bold');
+
+            let input = document.createElement('input');
+            input.type = 'text';
+            input.value = qrCode.trim(); // Отображаем значение QR Code без лишних пробелов
+            input.classList.add('form-control');
+            input.setAttribute('readonly', true); // Делаем поле только для чтения
+
+            divFormGroup.appendChild(label);
+            divFormGroup.appendChild(input);
+            formContainer.appendChild(divFormGroup);
+        }
+
+        function displaySharpness(sharpness) {
+            let sharpnessContainer = document.getElementById('sharpness-container');
+            sharpnessContainer.innerHTML = ''; // Очищаем контейнер
+
+            let divFormGroup = document.createElement('div');
+            divFormGroup.classList.add('form-group');
+
+            let label = document.createElement('label');
+            label.textContent = 'Sharpness';
+            label.classList.add('col-form-label', 'font-weight-bold');
+
+            let input = document.createElement('input');
+            input.type = 'text';
+            input.value = sharpness; // Отображаем значение резкости
+            input.classList.add('form-control');
+            input.setAttribute('readonly', true); // Делаем поле только для чтения
+
+            divFormGroup.appendChild(label);
+            divFormGroup.appendChild(input);
+            sharpnessContainer.appendChild(divFormGroup);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            getAllParameters();
+            setInterval(fetchQRData, 2000);
+        });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mt-4 mb-5">Fask app</h1>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="text-center mb-4">
+                    <img id="qr-image" src="" style="max-width: 100%; height: auto;">
+                </div>
+                <button onclick="captureImage()" class="btn-primary btn-block btn-lg">Capture Image</button>
+                <button onclick="activatePort()" class="btn-primary btn-block btn-lg">Activate Port</button>
+                <button onclick="calculateSharpness()" class="btn-primary btn-block btn-lg">Calculate Sharpness</button>
+                <button onclick="runDetection()" class="btn-primary btn-block btn-lg">Run Detection</button>
+                <button onclick="startVideo()" class="btn-primary btn-block btn-lg">Start Video</button>
+                <button onclick="stopVideo()" class="btn-primary btn-block btn-lg">Stop Video</button>
+
+                <div id="port-data-container" class="mt-3"></div>
+                <div id="sharpness-container" class="mt-3"></div>
+                <div id="score-container" class="mt-3"></div>
+                <div id="error-message" class="text-danger text-center mt-3"></div>
+                <div class="text-center mb-4">
+                    <img id="predict-image" src="" style="max-width: 75%; height: auto;">
+                    <img id="video-stream" src=""  style="max-width: 85%; height: auto;">
+                </div>
+
+            </div>
+            <div class="col-md-5">
+                <div id="form-container"></div>
+                
+            </div>
+        </div>
+        <div id="error-message" class="text-danger text-center mt-3"></div>
+
+        <!-- Модальное окно для уведомления -->
+        <div class="modal fade" id="successModal" tabindex="-1" role="dialog" aria-labelledby="successModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="successModalLabel">Уведомление</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        Данные успешно получены!
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

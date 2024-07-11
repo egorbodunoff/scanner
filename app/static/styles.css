@@ -1,0 +1,97 @@
+body {
+    font-family: 'Roboto', Arial, sans-serif;
+    padding: 10px;
+}
+
+h1 {
+    margin-bottom: 20px;
+}
+
+.btn-primary {
+    margin-bottom: 20px;
+}
+
+#error-message {
+    margin-bottom: 20px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-control {
+    height: 40px;
+    font-size: 14px;
+}
+
+.btn {
+    padding: 8px 16px;
+    font-size: 14px;
+}
+
+.btn-lg {
+    padding: 10px 20px;
+    font-size: 16px;
+}
+
+.btn-block {
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.modal-content {
+    border-radius: 10px;
+}
+
+.modal-header {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.modal-body {
+    text-align: center;
+}
+
+.modal-footer {
+    border-top: none;
+    padding-top: 0;
+}
+
+.form-group {
+    margin-bottom: 5px; /* Уменьшаем отступ между форм-группами */
+    padding: 6px; /* Уменьшаем внутренний отступ форм-групп */
+    font-size: 12px; /* Уменьшаем размер шрифта для формы */
+}
+
+.form-control {
+    height: 25px; /* Уменьшаем высоту поля ввода */
+    font-size: 12px; /* Уменьшаем размер шрифта в полях ввода */
+}
+
+.btn {
+    padding: 4px 10px; /* Уменьшаем внутренние отступы кнопок */
+    font-size: 12px; /* Уменьшаем размер шрифта кнопок */
+}
+
+.input-group {
+    max-width: 200px; /* Максимальная ширина для полей ввода */
+    width: 100%
+}
+
+.btn-lg {
+    padding: 8px 16px; /* Уменьшаем внутренние отступы кнопок большого размера */
+    font-size: 14px; /* Оставляем немного больший размер шрифта для кнопок большого размера */
+}
+
+.col-md-6 {
+    margin-bottom: 5px; /* Уменьшаем отступ между колонками */
+}
+
+.set-button {
+    max-width: 440px;
+    width: 100%; /* Обеспечивает растягивание кнопки на всю доступную ширину, если контент длиннее */
+}
